@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验室物品实时检测 · YOLOv8</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #0f172a; color: #e2e8f0; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #94a3b8; font-size: 13px; margin-bottom: 18px; }
+  .stage { position: relative; width: 100%; aspect-ratio: 4/3; background: #000;
+           border-radius: 12px; overflow: hidden; }
+  video, #output { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+                   transform: scaleX(-1); }
+  video { display: none; }
+  .bar { display: flex; gap: 12px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+  button { padding: 10px 22px; font-size: 15px; border: none; border-radius: 8px;
+           cursor: pointer; font-weight: bold; }
+  #start { background: #22c55e; color: #052e16; }
+  #stop { background: #ef4444; color: #fff; display: none; }
+  .status { font-size: 14px; color: #94a3b8; }
+  .tags { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tag { background: #1e293b; border: 1px solid #334155; border-radius: 999px;
+         padding: 6px 14px; font-size: 14px; }
+  .tag b { color: #38bdf8; }
+  .hint { margin-top: 18px; font-size: 13px; color: #94a3b8; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧪 实验室物品实时检测</h1>
+  <div class="sub">YOLOv8n 微调 · 三类目标：烧杯 / 锥形瓶 / 试管 · 置信度阈值 0.35 · 推理设备 {{ device }}</div>
+
+  <div class="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <img id="output" alt="检测画面" style="display:none">
+  </div>
+
+  <div class="bar">
+    <button id="start">▶ 开启摄像头检测</button>
+    <button id="stop">■ 停止</button>
+    <span class="status" id="status">未启动</span>
+  </div>
+
+  <div class="tags" id="tags"></div>
+
+  <div class="hint">
+    使用提示：物品置于镜头 30~50cm，占画面 1/4 以上，背景尽量简洁、光线充足；
+    烧杯/锥形瓶中可盛少量水。本页面需要在 <b>localhost / 127.0.0.1</b> 下访问（浏览器安全策略要求）。
+  </div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const output = document.getElementById('output');
+const statusEl = document.getElementById('status');
+const tagsEl = document.getElementById('tags');
+const startBtn = document.getElementById('start');
+const stopBtn = document.getElementById('stop');
+let stream = null, timer = null, busy = false;
+
+function drawTags(list) {
+  tagsEl.innerHTML = list.length
+    ? list.map(d => `<span class="tag">${d.name} <b>${(d.conf * 100).toFixed(1)}%</b></span>`).join('')
+    : '<span class="tag" style="color:#64748b">未检出目标</span>';
+}
+
+async function tick() {
+  if (busy) return;                       // 上一帧还没推理完就跳过，避免帧堆积
+  const canvas = document.createElement('canvas');
+  canvas.width = 640;
+  canvas.height = 480;
+  canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
+  busy = true;
+  try {
+    const resp = await fetch('/detect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: canvas.toDataURL('image/jpeg', 0.8) })
+    });
+    const data = await resp.json();
+    output.src = data.image;
+    output.style.display = 'block';
+    drawTags(data.detections);
+    statusEl.textContent = `检测中 · 检出 ${data.detections.length} 个目标`;
+  } catch (e) {
+    statusEl.textContent = '推理请求失败：' + e.message;
+  } finally {
+    busy = false;
+  }
+}
+
+startBtn.onclick = async () => {
+  stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  video.srcObject = stream;
+  video.style.display = 'block';
+  output.style.display = 'none';
+  startBtn.style.display = 'none';
+  stopBtn.style.display = 'inline-block';
+  timer = setInterval(tick, 200);        // 约 5 FPS，4060 GPU 上延迟很低
+  statusEl.textContent = '摄像头已开启，等待首帧推理…';
+};
+
+stopBtn.onclick = () => {
+  clearInterval(timer);
+  stream.getTracks().forEach(t => t.stop());
+  video.style.display = 'none';
+  output.style.display = 'none';
+  startBtn.style.display = 'inline-block';
+  stopBtn.style.display = 'none';
+  statusEl.textContent = '已停止';
+  tagsEl.innerHTML = '';
+};
+</script>
+</body>
+</html>

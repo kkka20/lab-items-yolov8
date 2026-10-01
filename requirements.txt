@@ -1,0 +1,13 @@
+# ============================================================
+# 实验室物品检测（YOLOv8 微调）依赖
+# 安装：pip install -r requirements.txt
+# ============================================================
+
+# YOLO 目标检测框架（会自动带上 torch、torchvision、numpy、Pillow 等）
+ultralytics>=8.3.0
+
+# 摄像头 / 图像处理
+opencv-python>=4.8.0
+
+# 网页版实时检测界面（python app.py）
+flask>=3.0.0

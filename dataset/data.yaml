@@ -1,0 +1,9 @@
+# 路径相对于"运行训练命令时所在的目录（项目根）"，请在项目根目录执行 python train.py
+path: dataset
+train: images/train
+val: images/val
+
+names:
+  0: beaker
+  1: erlenmeyer_flask
+  2: test_tube

@@ -1,0 +1,28 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ===== YOLO / Ultralytics 运行缓存 =====
+*.cache
+dataset/labels/*.cache
+
+# ===== 预训练底模（6MB 官方文件，训练时会自动下载，不入库）=====
+yolov8n.pt
+yolo26n.pt
+
+# ===== 提交用压缩包 / 临时文件 =====
+*.zip
+_runs/
+_template_ref/
+_*.py
+_*.jpg
+
+# ===== 系统/编辑器 =====
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
