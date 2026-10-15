@@ -26,3 +26,15 @@ Desktop.ini
 .DS_Store
 .vscode/
 .idea/
+
+# ===== 数据集（图片+标注，体积大不上传）=====
+# dataset/          # 烧杯数据集(已在仓库中,保留)
+# dataset_apple/    # 苹果数据集(需上传,取消忽略)
+
+# ===== 训练产物与日志 =====
+runs/
+train_log.txt
+# best.pt          # 训练好的模型(需上传,取消忽略)
+
+# ===== 大文件文档 =====
+*.pptx
